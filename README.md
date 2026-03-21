@@ -36,4 +36,22 @@ Log in with `s24bcau0044@bennett.edu.in` to see the admin panel.
 
 ## Email setup
 
-Use a Gmail App Password, not the normal Gmail password. Smart Recover will send mail from `smartrecoverlostandfound@gmail.com` when SMTP is configured; otherwise it will still log the email events in the dashboard with a queued status.
+For local use, you can still use Gmail SMTP with an App Password.
+
+For free Render deployment, use Resend instead of SMTP, because free Render instances block outbound SMTP ports.
+
+Recommended Render environment variables:
+
+```env
+RESEND_API_KEY=re_xxxxxxxxx
+RESEND_FROM_EMAIL=Smart Recover <onboarding@resend.dev>
+```
+
+Optional local SMTP fallback:
+
+```env
+SMTP_EMAIL=smartrecoverlostandfound@gmail.com
+SMTP_APP_PASSWORD=your_gmail_app_password
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+```

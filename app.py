@@ -7,6 +7,8 @@ import os
 import secrets
 import smtplib
 import sys
+import urllib.error
+import urllib.request
 from copy import deepcopy
 from datetime import datetime
 from email.message import EmailMessage
@@ -43,6 +45,8 @@ SMTP_EMAIL = os.environ.get("SMTP_EMAIL") or ENV.get("SMTP_EMAIL", "smartrecover
 SMTP_PASSWORD = os.environ.get("SMTP_APP_PASSWORD") or ENV.get("SMTP_APP_PASSWORD", "")
 SMTP_HOST = os.environ.get("SMTP_HOST") or ENV.get("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.environ.get("SMTP_PORT") or ENV.get("SMTP_PORT", "465"))
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY") or ENV.get("RESEND_API_KEY", "")
+RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL") or ENV.get("RESEND_FROM_EMAIL", SMTP_EMAIL)
 
 
 def now_iso():
@@ -199,6 +203,35 @@ def create_pickup_token():
 
 
 def send_email_if_configured(to_email, subject, body):
+    if RESEND_API_KEY:
+        payload = json.dumps(
+            {
+                "from": RESEND_FROM_EMAIL,
+                "to": [to_email],
+                "subject": subject,
+                "html": f"<div style='font-family:Segoe UI,Arial,sans-serif;line-height:1.6'>{body.replace(chr(10), '<br>')}</div>",
+            }
+        ).encode("utf-8")
+        request = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=15) as response:
+                if 200 <= response.status < 300:
+                    return True, ""
+                return False, f"Resend returned HTTP {response.status}"
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="ignore")
+            return False, f"Resend HTTPError {exc.code}: {detail}"
+        except Exception as exc:
+            return False, f"Resend error: {exc}"
+
     sent = False
     error = ""
     if SMTP_PASSWORD:
@@ -315,8 +348,8 @@ def public_state_for(user):
             "universityDomain": UNIVERSITY_DOMAIN,
             "adminEmail": ADMIN_EMAIL,
             "pickupPoint": PICKUP_POINT,
-            "smtpEmail": SMTP_EMAIL,
-            "emailConfigured": bool(SMTP_PASSWORD),
+            "smtpEmail": RESEND_FROM_EMAIL if RESEND_API_KEY else SMTP_EMAIL,
+            "emailConfigured": bool(RESEND_API_KEY or SMTP_PASSWORD),
         },
     }
 
