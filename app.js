@@ -127,7 +127,7 @@ async function refreshState() {
   }
 }
 
-function itemCard(item, type, currentUser, showClaimBox = false) {
+function itemCard(item, type, currentUser, showClaimBox = false, showDeleteButton = false) {
   const image = item.imageData ? `<img src="${item.imageData}" alt="${escapeHtml(item.itemName)}">` : "";
   const approvedClaim = type === "found" ? approvedClaimForItem(item.id) : null;
   const existingClaim = claimsForCurrentUser().find(
@@ -148,6 +148,9 @@ function itemCard(item, type, currentUser, showClaimBox = false) {
       </div>
     `
     : "";
+  const deleteButton = showDeleteButton
+    ? `<div class="action-row"><button class="danger" data-delete-item="${type}:${item.id}">Delete ${type} item</button></div>`
+    : "";
 
   return `
     <article class="item-card">
@@ -165,6 +168,7 @@ function itemCard(item, type, currentUser, showClaimBox = false) {
       ${image}
       ${pickupHint}
       ${claimBox}
+      ${deleteButton}
     </article>
   `;
 }
@@ -351,14 +355,18 @@ function renderPageContent(user) {
         "Your Lost Items",
         "Everything you reported missing",
         "Use this page to review what you have submitted and compare it against matches.",
-        userLostItems.length ? userLostItems.map((item) => itemCard(item, "lost", user)).join("") : renderEmpty("You have not reported any lost items yet.")
+        userLostItems.length
+          ? userLostItems.map((item) => itemCard(item, "lost", user, false, true)).join("")
+          : renderEmpty("You have not reported any lost items yet.")
       );
     case "your-discoveries":
       return renderListPage(
         "Your Discoveries",
         "Items you found on campus",
         "When admin approves a claim, you will hand the item over through the official office workflow.",
-        userFoundItems.length ? userFoundItems.map((item) => itemCard(item, "found", user)).join("") : renderEmpty("You have not submitted any found items yet.")
+        userFoundItems.length
+          ? userFoundItems.map((item) => itemCard(item, "found", user, false, true)).join("")
+          : renderEmpty("You have not submitted any found items yet.")
       );
     case "matches":
       return renderListPage(
@@ -662,6 +670,22 @@ function bindDashboardEvents(user) {
         state.currentPage = "claims";
         render();
         showToast("Claim submitted for verification.");
+      } catch (error) {
+        showToast(error.message);
+      }
+    });
+  });
+
+  document.querySelectorAll("[data-delete-item]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const [itemType, itemId] = button.getAttribute("data-delete-item").split(":");
+      const confirmed = window.confirm(`Delete this ${itemType} item report?`);
+      if (!confirmed) return;
+      try {
+        const payload = await api(`/api/items/${itemType}/${itemId}/delete`, { method: "POST", body: "{}" });
+        setState(payload);
+        render();
+        showToast(`${itemType === "lost" ? "Lost" : "Found"} item deleted.`);
       } catch (error) {
         showToast(error.message);
       }

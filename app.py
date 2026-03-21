@@ -359,6 +359,10 @@ class SmartRecoverHandler(BaseHTTPRequestHandler):
             return self.handle_create_claim()
         if parsed.path == "/api/demo":
             return self.handle_demo()
+        if parsed.path.startswith("/api/items/"):
+            parts = parsed.path.strip("/").split("/")
+            if len(parts) == 5 and parts[4] == "delete":
+                return self.handle_delete_item(parts[2], parts[3])
         if parsed.path.startswith("/api/claims/"):
             parts = parsed.path.strip("/").split("/")
             if len(parts) == 4:
@@ -520,6 +524,35 @@ class SmartRecoverHandler(BaseHTTPRequestHandler):
         DATA["claims"].insert(0, claim)
         save_data(DATA)
         self.send_json(public_state_for(user), status=HTTPStatus.CREATED)
+
+    def handle_delete_item(self, item_type, item_id):
+        user = self.require_user()
+        if not user:
+            return
+
+        collection_key = "lostItems" if item_type == "lost" else "foundItems" if item_type == "found" else None
+        if not collection_key:
+            return self.send_json({"error": "Unsupported item type."}, status=HTTPStatus.BAD_REQUEST)
+
+        item = next((entry for entry in DATA[collection_key] if entry["id"] == item_id), None)
+        if not item:
+            return self.send_json({"error": "Item not found."}, status=HTTPStatus.NOT_FOUND)
+
+        if item["userId"] != user["id"] and not is_admin_email(user["email"]):
+            return self.send_json({"error": "You can delete only your own items."}, status=HTTPStatus.FORBIDDEN)
+
+        DATA[collection_key] = [entry for entry in DATA[collection_key] if entry["id"] != item_id]
+        if item_type == "found":
+            DATA["claims"] = [claim for claim in DATA["claims"] if claim["foundItemId"] != item_id]
+        else:
+            DATA["eventKeys"] = [
+                key
+                for key in DATA["eventKeys"]
+                if not key.startswith(f"match:{item_id}:") and not key.startswith(f"lost-request:{item_id}:")
+            ]
+
+        save_data(DATA)
+        self.send_json(public_state_for(user))
 
     def handle_claim_action(self, claim_id, action):
         user = self.require_user()
@@ -726,8 +759,9 @@ class SmartRecoverHandler(BaseHTTPRequestHandler):
 
 def main():
     port = int(os.environ.get("SMARTRECOVER_PORT", ENV.get("PORT", "8000")))
-    server = ThreadingHTTPServer(("127.0.0.1", port), SmartRecoverHandler)
-    print(f"Smart Recover running on http://127.0.0.1:{port}")
+    host = os.environ.get("SMARTRECOVER_HOST", ENV.get("HOST", "0.0.0.0"))
+    server = ThreadingHTTPServer((host, port), SmartRecoverHandler)
+    print(f"Smart Recover running on http://{host}:{port}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
