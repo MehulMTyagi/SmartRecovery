@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Recover</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <main id="app"></main>
+  </div>
+
+  <template id="guest-template">
+    <section class="auth-stage">
+      <div class="auth-shell">
+        <aside class="auth-brand-panel">
+          <div class="auth-brand-copy">
+            <p class="auth-brand-mark">SMART RECOVER</p>
+            <h2>Welcome to campus recovery.</h2>
+            <p>
+              Bennett University's verified lost-and-found system for reporting missing items,
+              reviewing discoveries, and completing secure office-based handovers.
+            </p>
+          </div>
+          <div class="auth-brand-footer">
+            <p>Lost it. Found it. Recover it responsibly.</p>
+          </div>
+        </aside>
+
+        <section class="auth-form-panel">
+          <div class="auth-panel-intro">
+            <p class="section-tag">Secure access</p>
+            <h2>Login</h2>
+            <p class="muted">
+              Use your Bennett University email ID to access Smart Recover.
+            </p>
+          </div>
+
+          <form id="login-form" class="auth-form active">
+            <label>
+              University email
+              <input name="email" type="email" placeholder="student@bennett.edu.in" required>
+            </label>
+            <label>
+              Password
+              <input name="password" type="password" placeholder="Enter your password" required>
+            </label>
+            <button type="submit">Login</button>
+          </form>
+
+          <div class="auth-switch">
+            <p>New user? <button type="button" class="link-button" data-auth-switch="signup">Signup</button></p>
+          </div>
+
+          <form id="signup-form" class="auth-form hidden">
+            <label>
+              Full name
+              <input name="name" type="text" placeholder="Aarav Patel" required>
+            </label>
+            <label>
+              University email
+              <input name="email" type="email" placeholder="student@bennett.edu.in" required>
+            </label>
+            <label>
+              University ID
+              <input name="universityId" type="text" placeholder="2026-CS-014" required>
+            </label>
+            <label>
+              Password
+              <input name="password" type="password" placeholder="Create a password" required>
+            </label>
+            <button type="submit">Create account</button>
+          </form>
+
+          <div class="auth-switch hidden" id="signin-switch">
+            <p>Already have an account? <button type="button" class="link-button" data-auth-switch="login">Login</button></p>
+          </div>
+        </section>
+      </div>
+    </section>
+  </template>
+
+  <template id="dashboard-template">
+    <section class="workspace-shell">
+      <aside class="sidebar card">
+        <div class="sidebar-brand">
+          <p class="section-tag">Smart Recover</p>
+          <h2 id="welcome-title"></h2>
+          <p id="welcome-subtitle" class="muted"></p>
+        </div>
+        <nav class="sidebar-nav">
+          <button class="nav-link" data-nav="home">Home</button>
+          <button class="nav-link" data-nav="report-lost">Report Lost Item</button>
+          <button class="nav-link" data-nav="report-found">Report Found Item</button>
+          <button class="nav-link" data-nav="campus-discoveries">Campus Discoveries</button>
+          <button class="nav-link" data-nav="your-lost">Your Lost Items</button>
+          <button class="nav-link" data-nav="your-discoveries">Your Discoveries</button>
+          <button class="nav-link" data-nav="matches">Suggested Matches</button>
+          <button class="nav-link" data-nav="claims">Claims &amp; Pickup</button>
+          <button class="nav-link hidden" id="admin-nav-btn" data-nav="admin">Admin Panel</button>
+        </nav>
+        <div class="sidebar-actions">
+          <button id="seed-data-btn" class="secondary">Load demo data</button>
+          <button id="logout-btn" class="ghost">Log out</button>
+        </div>
+      </aside>
+
+      <section class="workspace-main">
+        <section class="stats-grid" id="stats-grid"></section>
+        <section id="page-content" class="page-content"></section>
+      </section>
+    </section>
+  </template>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
