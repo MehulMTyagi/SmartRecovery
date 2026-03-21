@@ -39,10 +39,10 @@ def load_env():
 
 
 ENV = load_env()
-SMTP_EMAIL = ENV.get("SMTP_EMAIL", "smartrecoverlostandfound@gmail.com")
-SMTP_PASSWORD = ENV.get("SMTP_APP_PASSWORD", "")
-SMTP_HOST = ENV.get("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(ENV.get("SMTP_PORT", "465"))
+SMTP_EMAIL = os.environ.get("SMTP_EMAIL") or ENV.get("SMTP_EMAIL", "smartrecoverlostandfound@gmail.com")
+SMTP_PASSWORD = os.environ.get("SMTP_APP_PASSWORD") or ENV.get("SMTP_APP_PASSWORD", "")
+SMTP_HOST = os.environ.get("SMTP_HOST") or ENV.get("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.environ.get("SMTP_PORT") or ENV.get("SMTP_PORT", "465"))
 
 
 def now_iso():
