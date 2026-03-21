@@ -794,7 +794,8 @@ def main():
     port = int(os.environ.get("PORT") or os.environ.get("SMARTRECOVER_PORT") or ENV.get("PORT", "8000"))
     host = os.environ.get("SMARTRECOVER_HOST", ENV.get("HOST", "0.0.0.0"))
     server = ThreadingHTTPServer((host, port), SmartRecoverHandler)
-    print(f"Smart Recover running on http://{host}:{port}")
+    display_host = "127.0.0.1" if host == "0.0.0.0" else host
+    print(f"Smart Recover running on http://{display_host}:{port}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
