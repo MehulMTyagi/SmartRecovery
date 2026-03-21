@@ -758,7 +758,7 @@ class SmartRecoverHandler(BaseHTTPRequestHandler):
 
 
 def main():
-    port = int(os.environ.get("SMARTRECOVER_PORT", ENV.get("PORT", "8000")))
+    port = int(os.environ.get("PORT") or os.environ.get("SMARTRECOVER_PORT") or ENV.get("PORT", "8000"))
     host = os.environ.get("SMARTRECOVER_HOST", ENV.get("HOST", "0.0.0.0"))
     server = ThreadingHTTPServer((host, port), SmartRecoverHandler)
     print(f"Smart Recover running on http://{host}:{port}")
