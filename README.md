@@ -26,10 +26,6 @@ py app.py
 
 4. Open `http://127.0.0.1:8000`.
 
-## Vercel note
-
-This project can be deployed to Vercel with the included `api/index.py` and `vercel.json`, but Vercel's Python runtime is serverless. The app therefore falls back to temporary storage on Vercel (`/tmp`), which is not durable. That means accounts, sessions, and lost/found data may reset between cold starts or deployments. For a real production deployment on Vercel, move storage to a database first.
-
 ## Demo admin account
 
 Log in with `s24bcau0044@bennett.edu.in` to see the admin panel.

@@ -20,7 +20,7 @@ from urllib.parse import parse_qs, urlparse
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_FILE = Path("/tmp/smartrecover-data.json") if os.environ.get("VERCEL") else BASE_DIR / "data.json"
+DATA_FILE = BASE_DIR / "data.json"
 ENV_FILE = BASE_DIR / ".env"
 UNIVERSITY_DOMAIN = "@bennett.edu.in"
 ADMIN_EMAIL = "s24bcau0044@bennett.edu.in"

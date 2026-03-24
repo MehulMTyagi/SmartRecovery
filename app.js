@@ -309,11 +309,12 @@ function renderListPage(kicker, title, text, html) {
 function renderHomePage(user) {
   const userLostItems = state.lostItems.filter((item) => item.userId === user.id);
   const userFoundItems = state.foundItems.filter((item) => item.userId === user.id);
+  const adminUser = isAdmin(user);
   return `
     ${pageHeader("Home", "Choose where you want to work", "Each section now has its own focused page so you can move through the recovery flow without clutter.")}
     <section class="home-grid">
-      ${homeCard("Report a lost item", "Start a recovery request with full details.", "report-lost", `${userLostItems.length} reports`)}
-      ${homeCard("Report a found item", "Log something discovered on campus.", "report-found", `${userFoundItems.length} discoveries`)}
+      ${adminUser ? "" : homeCard("Report a lost item", "Start a recovery request with full details.", "report-lost", `${userLostItems.length} reports`)}
+      ${adminUser ? "" : homeCard("Report a found item", "Log something discovered on campus.", "report-found", `${userFoundItems.length} discoveries`)}
       ${homeCard("Campus discoveries", "Browse found items once access is unlocked.", "campus-discoveries", `${state.discoverableFoundItems.length} visible`)}
       ${homeCard("Your lost items", "Review everything you have reported as missing.", "your-lost", `${userLostItems.length} active`)}
       ${homeCard("Your discoveries", "See the items you personally found.", "your-discoveries", `${userFoundItems.length} posted`)}
@@ -333,6 +334,11 @@ function renderPageContent(user) {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const visibleFoundItems = [...state.discoverableFoundItems].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const canViewFoundItems = userLostItems.length > 0;
+  const adminUser = isAdmin(user);
+
+  if (adminUser && (state.currentPage === "report-lost" || state.currentPage === "report-found")) {
+    state.currentPage = "admin";
+  }
 
   switch (state.currentPage) {
     case "report-lost":
@@ -376,21 +382,35 @@ function renderPageContent(user) {
         state.matches.length
           ? state.matches
               .map(
-                (match) => `
-                  <article class="match-card">
-                    <div class="card-header">
-                      <div>
-                        <h4>${escapeHtml(match.lostItem.itemName)} <-> ${escapeHtml(match.foundItem.itemName)}</h4>
-                        <p class="muted compact">Possible match based on title overlap, keywords, and location similarity.</p>
+                (match) => {
+                  const existingClaim = claimsForCurrentUser().find(
+                    (claim) => claim.userId === user.id && claim.foundItemId === match.foundItem.id
+                  );
+                  const approved = approvedClaimForItem(match.foundItem.id);
+                  const claimBlocked = Boolean(existingClaim || approved);
+                  return `
+                    <article class="match-card">
+                      <div class="card-header">
+                        <div>
+                          <h4>${escapeHtml(match.lostItem.itemName)} <-> ${escapeHtml(match.foundItem.itemName)}</h4>
+                          <p class="muted compact">Possible match based on title overlap, keywords, and location similarity.</p>
+                        </div>
+                        <span class="badge approved">${match.score}% match</span>
                       </div>
-                      <span class="badge approved">${match.score}% match</span>
-                    </div>
-                    <div class="meta">
-                      <span>Lost: ${escapeHtml(match.lostItem.location)}</span>
-                      <span>Found: ${escapeHtml(match.foundItem.location)}</span>
-                    </div>
-                  </article>
-                `
+                      <div class="meta">
+                        <span>Lost: ${escapeHtml(match.lostItem.location)}</span>
+                        <span>Found: ${escapeHtml(match.foundItem.location)}</span>
+                      </div>
+                      <p class="muted compact">${escapeHtml(match.foundItem.description)}</p>
+                      <div class="inline-proof">
+                        <textarea data-proof-for="${match.foundItem.id}" rows="3" placeholder="Add identifying details or proof before claiming"></textarea>
+                        <button data-claim-btn="${match.foundItem.id}" ${claimBlocked ? "disabled" : ""}>
+                          ${existingClaim ? "Claim submitted" : approved ? "Already approved" : "Claim this matched item"}
+                        </button>
+                      </div>
+                    </article>
+                  `;
+                }
               )
               .join("")
           : renderEmpty("No strong matches yet.")
@@ -567,6 +587,8 @@ function renderDashboard() {
   document.querySelector("#welcome-title").textContent = user.name;
   document.querySelector("#welcome-subtitle").textContent = `${user.universityId} | ${user.email}`;
   document.querySelector("#admin-nav-btn").classList.toggle("hidden", !isAdmin(user));
+  document.querySelector("#report-lost-nav-btn").classList.toggle("hidden", isAdmin(user));
+  document.querySelector("#report-found-nav-btn").classList.toggle("hidden", isAdmin(user));
   renderStats(user);
   document.querySelector("#page-content").innerHTML = renderPageContent(user);
   document.querySelectorAll("[data-nav]").forEach((button) => {
